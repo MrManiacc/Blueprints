@@ -1,18 +1,15 @@
 package me.jraynor.internal
 
 import me.jraynor.api.network.Network
-import me.jraynor.api.select.BlockSelect
+import me.jraynor.api.select.PlayerHooks
 import me.jraynor.imgui.Gui
 import me.jraynor.objects.tile.SingularityTile
 import me.jraynor.util.runOnClient
 import me.jraynor.util.runOnRender
 import me.jraynor.util.whenClient
 import me.jraynor.util.whenServer
-import net.minecraftforge.api.distmarker.Dist
-import net.minecraftforge.api.distmarker.OnlyIn
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent
 import net.minecraftforge.fml.event.lifecycle.FMLLoadCompleteEvent
-import net.minecraftforge.fml.event.server.FMLServerStartingEvent
 import net.minecraftforge.fml.event.server.FMLServerStoppingEvent
 import thedarkcolour.kotlinforforge.eventbus.KotlinEventBus
 
@@ -35,7 +32,7 @@ internal object Listeners {
         forgeBus.addListener(Common::onBlockBreak)
         modBus.addListener(Common::onLoadCComplete)
         forgeBus.addListener(Common::onWorldUnload)
-        BlockSelect.register(modBus, forgeBus)
+        PlayerHooks.register(modBus, forgeBus)
     }
 
 

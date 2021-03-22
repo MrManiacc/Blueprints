@@ -90,6 +90,12 @@ repositories {
         name = 'Kotlin for Forge'
         url = 'https://thedarkcolour.github.io/KotlinForForge/'
     }
+
+    maven {
+        name = "storagedrawers"
+        url = "https://dl.bintray.com/jaquadro/dev/"
+    }
+
 }
 
 configurations {
@@ -104,6 +110,7 @@ dependencies {
     // Use the latest version of KotlinForForge
     fg.deobf(implementation('thedarkcolour:kotlinforforge:1.10.0'))
 
+
     implementation platform("org.lwjgl:lwjgl-bom:3.2.3")
 
     shade 'org.lwjgl:lwjgl:3.2.3"'
@@ -116,22 +123,17 @@ dependencies {
     shade "io.github.spair:imgui-java-natives-windows:$imguiVersion"
 
 
-
-
-    // compile against the JEI API but do not include it at runtime
     compileOnly fg.deobf("mezz.jei:jei-${mc_version}:${jei_version}:api")
-    // at runtime, use the full JEI jar
-    runtimeOnly fg.deobf("mezz.jei:jei-${mc_version}:${jei_version}")
-    runtimeOnly fg.deobf("com.feed_the_beast.mods:ftb-gui-library:1.0.0.18")
-
-//    runtimeOnly fg.deobf(files('libs/ImmersiveEngineering-1.16.4-4.1.1-128.jar'))
+    compileOnly fg.deobf("com.jaquadro.minecraft.storagedrawers:StorageDrawers:${drawers_version}:api")
     compileOnly "mekanism:Mekanism:${mekanism_version}:api"
 
-    // If you want to test/use Mekanism & its modules during `runClient` invocation, use the following
+    runtimeOnly fg.deobf("com.feed_the_beast.mods:ftb-gui-library:1.0.0.18")
+    runtimeOnly fg.deobf("mezz.jei:jei-${mc_version}:${jei_version}")
     runtimeOnly fg.deobf("mekanism:Mekanism:${mekanism_version}")// core
     runtimeOnly fg.deobf("mekanism:Mekanism:${mekanism_version}:additions")// Mekanism: Additions
     runtimeOnly fg.deobf("mekanism:Mekanism:${mekanism_version}:generators")// Mekanism: Generators
     runtimeOnly fg.deobf("mekanism:Mekanism:${mekanism_version}:tools")// Mekanism: Tools
+    runtimeOnly fg.deobf("com.jaquadro.minecraft.storagedrawers:StorageDrawers:${drawers_version}")// storage Drawers
 }
 
 compileKotlin {

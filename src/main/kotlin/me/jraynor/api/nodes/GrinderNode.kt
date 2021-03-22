@@ -7,27 +7,30 @@ import imgui.flag.ImGuiCond
 import imgui.type.ImBoolean
 import imgui.type.ImInt
 import me.jraynor.api.Graph
+import me.jraynor.api.Node
+import me.jraynor.api.Pin
 import me.jraynor.api.data.Buffers
-import me.jraynor.api.enums.Mode
+import me.jraynor.api.enums.IO
+import me.jraynor.api.enums.IconType
+import me.jraynor.api.logic.IFilter
 import me.jraynor.api.select.PlayerHooks
 import me.jraynor.util.getFloatArray
 import me.jraynor.util.putFloatArray
 import me.jraynor.util.toBlockPos
 import net.minecraft.block.BlockState
-import net.minecraft.entity.item.ItemEntity
+import net.minecraft.entity.LivingEntity
 import net.minecraft.nbt.CompoundNBT
+import net.minecraft.util.DamageSource
 import net.minecraft.util.Direction
 import net.minecraft.util.math.AxisAlignedBB
 import net.minecraft.util.math.BlockPos
+import net.minecraft.util.text.ITextComponent
 import net.minecraft.world.World
-import net.minecraftforge.common.util.LazyOptional
-import net.minecraftforge.items.IItemHandler
-import net.minecraftforge.items.ItemStackHandler
 
 /**
  * This node can pick up items within a given radius
  */
-class HopperNode(
+class GrinderNode(
     /**This is how far we should extend out **/
     val radius: ImInt = ImInt(2),
     /**The center of the pick up sphere**/
@@ -50,8 +53,10 @@ class HopperNode(
         (center[0] + radius.get()).toDouble(),
         (center[1] + radius.get()).toDouble(),
         (center[2] + radius.get()).toDouble()
-    )
-) : ExtractableNode(hasInput = false, hasTick = true) {
+    ),
+    /***This is how much damage to apply every tick**/
+    val damage: ImInt = ImInt(10)
+) : Node() {
 
     /**This is the current state of the block. This is only present on the client.**/
     private val blockState: BlockState?
@@ -62,14 +67,57 @@ class HopperNode(
     /**This is the buffer for the block pos**/
     private var blockPos: BlockPos = center.toBlockPos()
 
-    /**This is the source buffer for th**/
-    private val sourceBuffer = ItemStackHandler(1)
+    /**
+     * This will create the item filter
+     */
+    private fun getEntityFilter(graph: Graph): IFilter<ITextComponent, *>? {
+        val filterNode = findPinWithLabel("Filter") ?: return null
+        val outputs = filterNode.outputs(graph)
+        for (output in outputs) {
+            output.id ?: continue
+            val node = graph.findNodeByPinId(output.id!!)
+            if (node is FilterNode)
+                return node.genericFilter
+        }
+        return null
+    }
+
+    /**
+     * This will add our tick pin
+     */
+    override fun addPins() {
+        super.addPins()
+        add(
+            Pin(
+                io = IO.INPUT,
+                label = "DoTick",
+                textAfter = true,
+                computeText = false,
+                sameLine = true,
+                icon = IconType.ROUND_SQUARE,
+                innerColor = ImColor.rgbToColor("#fafafa")
+            )
+        )
+        add(
+            Pin(
+                io = IO.OUTPUT,
+                label = "Filter",
+                textAfter = false,
+                computeText = true,
+                indent = 125f,
+                icon = IconType.ROUND_SQUARE,
+                color = ImColor.rgbToColor("#653cfa"),
+                innerColor = ImColor.rgbToColor("#18f01f")
+            )
+        )
+    }
 
     /**
      * This will write our radius and center position
      */
     override fun serializeNBT(): CompoundNBT {
         val tag = super.serializeNBT()
+        tag.putInt("damage", damage.get())
         tag.putInt("radius", radius.get())
         tag.putIntArray("center", center)
         tag.putFloatArray("centerColor", centerColor)
@@ -82,6 +130,7 @@ class HopperNode(
      */
     override fun deserializeNBT(tag: CompoundNBT) {
         super.deserializeNBT(tag)
+        this.damage.set(tag.getInt("damage"))
         this.radius.set(tag.getInt("radius"))
         this.center = tag.getIntArray("center")
         this.centerColor = tag.getFloatArray("centerColor")
@@ -102,46 +151,25 @@ class HopperNode(
      */
     override fun doTick(world: World, graph: Graph) {
         super.doTick(world, graph)
-        doItemSuckUp(world, graph)
+        val entities = world.getEntitiesWithinAABB(LivingEntity::class.java, box) { true }
+        val filter = getEntityFilter(graph)
+        entities.forEach lit@{ entity ->
+            if (filter == null) {
+                if (grindEntity(entity))
+                    return@lit
+            } else {
+                if (filter.filter(entity.name, null, null).value)
+                    if (grindEntity(entity))
+                        return@lit
+            }
+        }
     }
 
     /**
-     * This will suck the items into this
+     * This will kill the given entity dropping its loops.
      */
-    private fun doItemSuckUp(serverWorld: World, graph: Graph) {
-        val filter = getItemFilter(graph)
-        val entities = serverWorld.getEntitiesWithinAABB(ItemEntity::class.java, box) { true }
-        entities.forEach { entity ->
-            val stack = entity.item
-            sourceBuffer.setStackInSlot(0, stack)
-            val source = LazyOptional.of { sourceBuffer }
-            if (filter == null) {
-                if (Mode.ITEM.extract(
-                        Mode.ITEM.type,
-                        stack.count,
-                        source,
-                        buffers[IItemHandler::class.java]
-                    ).value
-                ) {
-                    entity.remove()
-                    pushServerUpdates(serverWorld, blockPos, graph)
-                }
-            } else {
-                if (Mode.ITEM.extractFiltered(
-                        Mode.ITEM.type,
-                        IItemHandler::class.java,
-                        stack.count,
-                        source,
-                        buffers[IItemHandler::class.java],
-                        filter
-                    ).value
-                ) {
-                    entity.remove()
-                    pushServerUpdates(serverWorld, blockPos, graph)
-                }
-            }
-        }
-
+    private fun grindEntity(entity: LivingEntity): Boolean {
+        return entity.attackEntityFrom(DamageSource.GENERIC, this.damage.get().toFloat())
     }
 
     /**
@@ -153,7 +181,7 @@ class HopperNode(
         id ?: return
         NodeEditor.beginNode(id!!.toLong())
         super.render()
-        ImGui.textColored(ImColor.rgbToColor("#9e9a8e"), "Hopper Node")
+        ImGui.textColored(ImColor.rgbToColor("#9e9a8e"), "Grinder Node")
         ImGui.sameLine()
         if (ImGui.button("Select##$id"))
             pushFaceSelect()
@@ -168,13 +196,16 @@ class HopperNode(
      */
     override fun renderEx() {
         ImGui.setNextItemOpen(true, ImGuiCond.FirstUseEver)
-        if (ImGui.collapsingHeader("Hopper Node")) {
+        if (ImGui.collapsingHeader("Grinder Node")) {
             super.renderEx()
+            ImGui.setNextItemWidth(80f)
+            if (ImGui.inputInt("damage per tick##$id", damage, 1))
+                pushClientUpdate() //When input is update, push update
             ImGui.setNextItemWidth(80f)
             if (ImGui.inputInt("radius##$id", radius, 1, 5))
                 pushClientUpdate() //When input is update, push update
             ImGui.setNextItemWidth(150f)
-            if (ImGui.inputInt3("hopper center##$id", center))
+            if (ImGui.inputInt3("grinder center##$id", center))
                 pushClientUpdate()
             if (ImGui.checkbox("show center##$id", shown)) {
                 val key = Pair(this.center.toBlockPos(), Direction.UP)
@@ -188,7 +219,6 @@ class HopperNode(
                     pushClientUpdate()
             buffers.render()
             ImGui.spacing()
-            modes.render(this::pushClientUpdate)
         }
     }
 }

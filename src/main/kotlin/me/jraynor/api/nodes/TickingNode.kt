@@ -10,7 +10,6 @@ import me.jraynor.api.Node
 import me.jraynor.api.Pin
 import me.jraynor.api.enums.IO
 import me.jraynor.api.enums.IconType
-import me.jraynor.api.enums.Mode
 import net.minecraft.nbt.CompoundNBT
 import net.minecraft.world.World
 import kotlin.math.max
@@ -24,16 +23,21 @@ class TickingNode(
     /**How often this will trigger it's outputs. A speed of 20 will call once ever second.**/
     var tickSpeed: ImInt = ImInt(20)
 ) : Node() {
+    /**This is used to keep track of the current tick**/
     private var tick = 0
+
+    /**This will make sure that our tick method is called on the first right, if active.**/
+    private var hasRunOnce = true
 
     /**
      * This is called in the constructor of the node. it will
      */
     override fun addPins() {
+        super.addPins()
         add(
             Pin(
                 io = IO.OUTPUT,
-                label = "DoTick",
+                label = "OnTick",
                 textAfter = false,
                 icon = IconType.ROUND_SQUARE,
                 indent = 95f,
@@ -65,18 +69,21 @@ class TickingNode(
     /***
      * This will allow us to tick the given node
      */
-    override fun onTick(world: World, graph: Graph) {
+    override fun doTick(world: World, graph: Graph) {
+        super.doTick(world, graph)
         if (active.get()) {
             if (++tick >= tickSpeed.get()) {
-                val pin = findPinWithLabel("DoTick") ?: return
-                val outputs =
-                    pin.outputs(graph) //This says inputs but it's correct, technically it's the "outputs" for this instance
-                for (output in outputs) {
+                val tickOutput = findPinWithLabel("OnTick") ?: return
+                for (output in tickOutput.outputs(graph)) {
                     output.nodeId ?: continue
                     val node = graph.findById(output.nodeId!!) ?: continue
-                    node.onTick(world, graph)
+                    if (output.label == "DoTick")
+                        node.doTick(world, graph)
+                    else if (node is ExtractableNode && output.label == "DoExtract")
+                        node.doExtract(world, graph)
                 }
                 tick = 0
+                hasRunOnce = true
             }
         }
     }
@@ -90,6 +97,7 @@ class TickingNode(
         ImGui.dummy(1f, 1f)
         id ?: return
         NodeEditor.beginNode(id!!.toLong())
+        super.render()
         renderEx()
         renderPorts()
         NodeEditor.endNode()
@@ -100,13 +108,14 @@ class TickingNode(
      */
     override fun renderEx() {
         ImGui.text("Ticking Node")
+        super.renderEx()
         ImGui.spacing()
         if (ImGui.checkbox("Activated##$id", active))
-            pushUpdate()
+            pushClientUpdate()
         ImGui.setNextItemWidth(80f)
         if (ImGui.inputInt("Tick Speed##$id", tickSpeed, 1, 5)) {
             tickSpeed.set(max(0, tickSpeed.get()))
-            pushUpdate()
+            pushClientUpdate()
         }
         ImGui.spacing()
     }

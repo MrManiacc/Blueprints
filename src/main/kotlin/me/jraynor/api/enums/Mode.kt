@@ -23,7 +23,7 @@ enum class Mode(
     val methodIn: IExtraction<*, Boolean, *>,
     val type: Class<*>
 ) {
-    ITEM(0, 8, 64, 1, 10, "items/t", IExtraction.ITEM, IItemHandler::class.java),
+    ITEM(0, 1, 64, 1, 10, "items/t", IExtraction.ITEM, IItemHandler::class.java),
     ENERGY(0, 2000, Int.MAX_VALUE - 1, 50, 500, "rf/t", IExtraction.ENERGY, IEnergyStorage::class.java),
     FLUID(0, 500, Int.MAX_VALUE - 1, 50, 500, "mb/t", IExtraction.FLUID, IFluidHandler::class.java);
 

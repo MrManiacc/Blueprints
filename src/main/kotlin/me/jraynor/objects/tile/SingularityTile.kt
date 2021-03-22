@@ -5,7 +5,7 @@ import me.jraynor.api.network.NetEvent
 import me.jraynor.api.network.Network
 import me.jraynor.api.nodes.TickingNode
 import me.jraynor.api.packets.*
-import me.jraynor.api.select.BlockSelect
+import me.jraynor.api.select.PlayerHooks
 import me.jraynor.api.serverdata.NodeWorldData
 import me.jraynor.api.serverdata.WorldData
 import me.jraynor.internal.Registry
@@ -16,8 +16,6 @@ import net.minecraft.tileentity.ITickableTileEntity
 import net.minecraft.tileentity.TileEntity
 import net.minecraft.util.math.BlockPos
 import net.minecraft.world.server.ServerWorld
-import net.minecraftforge.common.capabilities.Capability
-import net.minecraftforge.common.util.LazyOptional
 import net.minecraftforge.fml.LogicalSide
 import net.minecraftforge.fml.network.NetworkEvent
 import java.util.*
@@ -73,7 +71,7 @@ import kotlin.collections.HashMap
         with(serverGraph) {
             for (node in nodes) {
                 if (node is TickingNode) {
-                    node.onTick(world!!, this)
+                    node.doTick(world!!, this)
                 }
             }
         }
@@ -115,7 +113,7 @@ import kotlin.collections.HashMap
      */
     @NetEvent(LogicalSide.SERVER)
     fun onBlockSelect(packet: PacketSelectStart, context: NetworkEvent.Context): Boolean {
-        BlockSelect.selectingPlayers.add(packet.uuid!!)
+        PlayerHooks.selectingPlayers.add(packet.uuid!!)
         println("Got start selection ${packet.uuid}")
         return true
     }

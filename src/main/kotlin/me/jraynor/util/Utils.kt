@@ -24,9 +24,14 @@ import java.util.*
 import java.util.concurrent.CompletableFuture
 import com.sun.javafx.geom.Vec3d
 import net.minecraft.block.Blocks
+import net.minecraft.client.Minecraft
+import net.minecraft.item.ItemStack
+import net.minecraft.item.TieredItem
 import net.minecraft.util.Direction
 import net.minecraft.util.math.vector.Vector3d
 import net.minecraft.util.math.RayTraceContext
+import net.minecraftforge.items.IItemHandler
+import net.minecraftforge.items.ItemStackHandler
 
 /**
  * This is used for when a link is created in the node graph
@@ -339,6 +344,13 @@ fun IntArray.toBlockPos(): BlockPos {
 }
 
 /**
+ * This creates a new block pos from this int array
+ */
+fun BlockPos.toArray(): IntArray {
+    return intArrayOf(x, y, z)
+}
+
+/**
  * This will put a float array iin the compound tag
  */
 fun CompoundNBT.putFloatArray(name: String, floatArray: FloatArray) {
@@ -360,3 +372,56 @@ fun CompoundNBT.getFloatArray(name: String): FloatArray {
         array[i] = tag.getFloat("f_$i")
     return array
 }
+
+/**
+ * This will allow us to access the current client's world from anywhere
+ */
+val clientWorld: World?
+    get() {
+        if (logicalServer) return null
+        return Minecraft.getInstance().world
+    }
+
+/**
+ * This is a helper function to clear an itemstack
+ */
+fun ItemStackHandler.clear() {
+    for (i in 0 until slots)
+        this.setStackInSlot(0, ItemStack.EMPTY)
+}
+
+/**
+ * This will return the next non empty item stack (if possible)
+ */
+fun ItemStackHandler.simulateNext(): ItemStack {
+    for (i in 0 until slots) {
+        val stack = this.getStackInSlot(i)
+        if (!stack.isEmpty)
+            return this.extractItem(i, 1, true)
+    }
+    return ItemStack.EMPTY
+}
+
+/**
+ * This will return the next non empty item stack (if possible)
+ */
+fun ItemStackHandler.extractNext(): ItemStack {
+    for (i in 0 until slots) {
+        val stack = this.getStackInSlot(i)
+        if (!stack.isEmpty)
+            this.extractItem(i, 1, false)
+    }
+    return ItemStack.EMPTY
+}
+
+/**
+ * This will get the yaw for the placement.
+ */
+val Direction.yawFromFacing: Float
+    get() = when (this) {
+        Direction.DOWN, Direction.UP, Direction.SOUTH -> 0f
+        Direction.EAST -> 270f
+        Direction.NORTH -> 180f
+        Direction.WEST -> 90f
+        else -> 0f
+    }

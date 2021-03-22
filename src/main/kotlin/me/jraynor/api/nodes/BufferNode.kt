@@ -18,7 +18,7 @@ import net.minecraft.world.server.ServerWorld
 class BufferNode(
     /**This keeps track of the internal storage data.**/
     val buffers: Buffers = Buffers()
-) : FilterableIONode() {
+) : ExtractableNode() {
 
     /**
      * This will write the link and the face. It has null safety so if they are null they will not be written. There
@@ -39,13 +39,6 @@ class BufferNode(
         this.buffers.deserializeNBT(tag.getCompound("buffers"))
     }
 
-    /***
-     * This will allow us to tick the given node
-     */
-    override fun onTick(world: World, graph: Graph) {
-        doInputOutput(graph, world as ServerWorld)
-    }
-
     /**
      * This should only be called from the client.
      * This code should not exist on the server.
@@ -54,6 +47,7 @@ class BufferNode(
     override fun render() {
         id ?: return
         NodeEditor.beginNode(id!!.toLong())
+        super.render()
         ImGui.textColored(ImColor.rgbToColor("#34568B"), "Buffer node")
         ImGui.dummy(0f, 10f)
         renderPorts()
@@ -69,9 +63,8 @@ class BufferNode(
             ImGui.spacing()
             buffers.render()
             ImGui.spacing()
-            modes.render(this::pushUpdate)
+            modes.render(this::pushClientUpdate)
             ImGui.spacing()
         }
     }
-
 }

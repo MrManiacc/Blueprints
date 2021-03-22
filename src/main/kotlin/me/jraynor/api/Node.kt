@@ -2,13 +2,23 @@ package me.jraynor.api
 
 import imgui.ImGui
 import imgui.extension.nodeditor.NodeEditor
-import me.jraynor.api.enums.Mode
-import me.jraynor.api.nodes.NodeData
+import me.jraynor.api.extensions.INodeExtension
+import me.jraynor.api.extensions.Callback
+import me.jraynor.api.extensions.NBTCallback
+import me.jraynor.api.extensions.TickCallback
+import me.jraynor.api.network.Network
+import me.jraynor.api.packets.PacketUpdateNode
+import me.jraynor.api.serverdata.WorldData
+import me.jraynor.util.logicalClient
 import me.jraynor.util.putClass
 import me.jraynor.util.whenClient
+import me.jraynor.util.whenServer
 import net.minecraft.client.Minecraft
+import net.minecraft.client.world.ClientWorld
 import net.minecraft.nbt.CompoundNBT
+import net.minecraft.util.math.BlockPos
 import net.minecraft.world.World
+import net.minecraft.world.server.ServerWorld
 import net.minecraftforge.api.distmarker.Dist
 import net.minecraftforge.api.distmarker.OnlyIn
 import net.minecraftforge.common.util.INBTSerializable
@@ -34,7 +44,34 @@ abstract class Node(
     var updateCallback: ((Node) -> Unit)? = null,
     /**This is called whenever you're looking to select a block**/
     var blockCallback: ((Node) -> Unit)? = null,
-) : INBTSerializable<CompoundNBT> {
+    /**This is a list of of render calls that will be called from inside the node renderer**/
+    private val nodeRenderCallbacks: MutableList<Callback> = ArrayList(),
+    /**This is a list of of render calls that will be called from inside the node renderer**/
+    private val propertyRenderCallbacks: MutableList<Callback> = ArrayList(),
+    /**These will be called when the add pins method is called on both the client and server.**/
+    private val pinsCallback: MutableList<Callback> = ArrayList(),
+    /**This will be called upon the tick**/
+    private val tickCallbacks: MutableList<TickCallback> = ArrayList(),
+    /**This is used for when trying to read**/
+    private val readCallbacks: MutableList<NBTCallback> = ArrayList(),
+    /**This is used for when trying to write**/
+    private val writeCallbacks: MutableList<NBTCallback> = ArrayList(),
+) : INBTSerializable<CompoundNBT>, INodeExtension {
+
+    /**
+     * This will initialize our client extension
+     */
+    init {
+        this.hook(
+            this.nodeRenderCallbacks,
+            this.propertyRenderCallbacks,
+            this.pinsCallback,
+            this.tickCallbacks,
+            this.readCallbacks,
+            this.writeCallbacks
+        )
+    }
+
     /***This allows us to get and set the pos**/
     var x: Float
         get() = NodeEditor.getNodePositionX(id!!.toLong())
@@ -63,14 +100,23 @@ abstract class Node(
     protected var pinSize = 24f
 
     /**This is a getter for the world on the client.**/
-    protected val world: World
+    val clientWorld: ClientWorld
         @OnlyIn(Dist.CLIENT)
         get() = Minecraft.getInstance().world!!
 
     /**
+     * This will get the blocks name at the given position
+     */
+    fun getBlockName(pos: BlockPos): String {
+        val world = (if (logicalClient) clientWorld else WorldData.world) ?: return "NO_WORLD_FOUND"
+        val block = world.getBlockState(pos)
+        return block.block.translatedName.string
+    }
+
+    /**
      * This will call the [updateCallback] if possible, which should update the node.
      */
-    protected fun pushUpdate() {
+    fun pushClientUpdate() {
         updateCallback?.let {
             it(this)
         } //This should be called from the server.
@@ -79,7 +125,7 @@ abstract class Node(
     /**
      * This will call the [blockCallback] if possible, which should update the node.
      */
-    protected fun pushFaceSelect() {
+    fun pushFaceSelect() {
         blockCallback?.let {
             it(this)
         } //This should be called from the server.
@@ -88,17 +134,16 @@ abstract class Node(
     /***
      * This will allow us to tick the given node
      */
-    open fun onTick(world: World, graph: Graph) {}
-
-    /**
-     * This will be called
-     */
-    open fun onInput(mode: Mode, graph: Graph) {}
+    open fun doTick(world: World, graph: Graph) {
+        this.tickCallbacks.forEach {
+            it(world as ServerWorld, graph, this)
+        }
+    }
 
     /**
      * This will find the pin with the given label
      */
-    protected fun findPinWithLabel(label: String): Pin? {
+    fun findPinWithLabel(label: String): Pin? {
         for (pin in pins)
             if (pin.label == label) return pin
         return null
@@ -109,18 +154,44 @@ abstract class Node(
      * This code should not exist on the server.
      * (or at least should be called)
      */
-    @OnlyIn(Dist.CLIENT) abstract fun render()
+    @OnlyIn(Dist.CLIENT) open fun render() {
+        this.nodeRenderCallbacks.forEach {
+            it(this)
+        }
+    }
 
     /**
      * This is used as the code that will render on the side view
      */
-    @OnlyIn(Dist.CLIENT) abstract fun renderEx()
+    @OnlyIn(Dist.CLIENT) open fun renderEx() {
+        this.propertyRenderCallbacks.forEach {
+            it(this)
+        }
+    }
 
     /**
      * This will simply render each of the ports. It can be called from where ever you'd like.
      */
     @OnlyIn(Dist.CLIENT) protected fun renderPorts() {
         pins.forEach { it.render() }
+    }
+
+    /**
+     * This will push an update for this node at the given position
+     */
+    fun pushServerUpdates(world: World, pos: BlockPos, graph: Graph? = this.parent) {
+        graph ?: return
+        if (this.parent == null)
+            this.parent = graph
+        Network.sendToClientsWithBlockLoaded(
+            PacketUpdateNode(
+                uuid = graph.uuid,
+                pos = pos,
+                node = this
+            ),
+            pos,
+            world
+        )
     }
 
     /**
@@ -131,7 +202,11 @@ abstract class Node(
     /**
      * This is called in the constructor of the node. it will
      */
-    abstract fun addPins()
+    open fun addPins() {
+        this.pinsCallback.forEach {
+            it(this)
+        }
+    }
 
     /**
      * This will add a port. TODO: check to see if we need to make sure the port doesn't exits?
@@ -156,6 +231,9 @@ abstract class Node(
     override fun serializeNBT(): CompoundNBT {
         val tag = CompoundNBT()
         id ?: throw NodeException("Failed to serialize node because there is no node id present.")
+        writeCallbacks.forEach {
+            it(tag, this)
+        }
         if (pos != null) {
             tag.putFloat("client_x", pos!!.first)
             tag.putFloat("client_y", pos!!.second)
@@ -181,6 +259,9 @@ abstract class Node(
      * This should deserialize the node.
      */
     override fun deserializeNBT(tag: CompoundNBT) {
+        readCallbacks.forEach {
+            it(tag, this)
+        }
         if (tag.contains("client_x") && tag.contains("client_y"))
             this.pos = Pair(tag.getFloat("client_x"), tag.getFloat("client_y"))
         this.id = tag.getInt("id")
@@ -198,7 +279,6 @@ abstract class Node(
             port.deserializeNBT(tag.getCompound("pin_$i"))
             add(port)
         }
-
     }
 
     override fun equals(other: Any?): Boolean {

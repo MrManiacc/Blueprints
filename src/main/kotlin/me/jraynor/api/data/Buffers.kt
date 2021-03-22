@@ -76,18 +76,18 @@ class Buffers(
         /**
          * Used to display the data in the ndoe
          */
-        fun render()
+        fun render(text: String = "inventory")
     }
 
     /**Max buffer slots = max int**/
-    private class ItemHandlerBuffer(
+    class ItemHandlerBuffer(
         size: Int = MAX_BUFFER_SIZE
     ) : ItemStackHandler(size), Handler {
         /**
          * This will display our item renderer
          */
-        override fun render() {
-            if (ImGui.beginListBox("inventory")) {
+        override fun render(text: String) {
+            if (ImGui.beginListBox(text)) {
                 InventoryUtils.forEachItem(this) lit@{ _, _, item, count ->
                     if (item == Items.AIR) return@lit
                     ImGui.text("${item.name.string}: $count")
@@ -127,9 +127,9 @@ class Buffers(
         /**
          * Used to display the data in the node
          */
-        override fun render() {
-            ImGui.textColored(ITEMS_COLOR, "energy: ${"%,d".format(energy)} rf")
-            ImGui.textColored(ENERGY_COLOR, "energy capacity: ${"%,d".format(capacity)} rf")
+        override fun render(text: String) {
+            if (energy > 0)
+                ImGui.textColored(ITEMS_COLOR, "energy: ${"%,d".format(energy)} rf")
         }
     }
 
@@ -137,8 +137,6 @@ class Buffers(
         /**This is the maximum value to set the item slot handler to**/
         const val MAX_BUFFER_SIZE = 1_000_000 //Default value is 1 million
 
-        /**The current color of the energy output**/
-        val ENERGY_COLOR: Int = ImColor.rgbToColor("#6293e3")
         val ITEMS_COLOR: Int = ImColor.rgbToColor("#e362d0")
     }
 

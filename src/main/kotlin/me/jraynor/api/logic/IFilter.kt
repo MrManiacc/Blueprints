@@ -14,7 +14,7 @@ fun interface IFilter<V : Any, H : Any> {
      * This method can be applied to a extraction method to allow either canceling the extraction or allowing it base on the regex
      * the parameter [test] is what you should test against
      */
-    fun filter(test: V, source: H, target: H): Return<Boolean>
+    fun filter(test: V, source: H?, target: H?): Return<Boolean>
 
     companion object {
         /**

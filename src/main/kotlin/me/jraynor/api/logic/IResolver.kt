@@ -1,7 +1,9 @@
 package me.jraynor.api.logic
 
 import me.jraynor.api.Node
+import me.jraynor.api.data.Buffers
 import me.jraynor.api.enums.Mode
+import me.jraynor.api.extensions.FakePlayerExt
 import me.jraynor.api.nodes.BufferNode
 import me.jraynor.api.nodes.HopperNode
 import me.jraynor.api.nodes.LinkNode
@@ -47,6 +49,8 @@ fun interface IResolver<H : Any> {
                     return@add Return.of(node.buffers[IItemHandler::class.java])
                 else if (node is HopperNode)
                     return@add Return.of(node.buffers[IItemHandler::class.java])
+                else if (node is FakePlayerExt)
+                    return@add Return.of(LazyOptional.of { node.inventory }) //This just makes it so we can always insert.
                 Return.of(LazyOptional.empty())
             }
             add(IEnergyStorage::class.java) { node, world ->

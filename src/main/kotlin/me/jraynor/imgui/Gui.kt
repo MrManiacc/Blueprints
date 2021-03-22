@@ -239,7 +239,7 @@ object Gui {
     }
 
     /**
-     * Renderst the background context
+     * Renders the background context
      */
     private fun renderBackgroundContext(firstRun: KMutableProperty<Boolean>) {
         /**This displays our context editor in imgui when requested from the background context**/
@@ -354,13 +354,13 @@ object Gui {
             NodeEditor.suspend()
             /**This start the node editor context**/
             renderStartNodeEditor()
-            /**This renders the delete context**/
-            processRemovals(graph, onDelete)
+
             /**This will render the node editor context and the add nodes**/
             renderBackgroundContext(firstRun)
             /**This renders the add context menu**/
             renderAddContext(graph, onAdd, *addNodes)
-
+            /**This renders the delete context**/
+            processRemovals(graph, onDelete)
             /**Resumes the current context**/
             NodeEditor.resume()
             if (firstRun.getter.call()) {
