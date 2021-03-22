@@ -58,8 +58,19 @@ class Pin(
      * I know that this calls [Graph#findbyInput] but the inputs are techinally the output for this pin hence
      * the method name outputs
      */
-    fun outputs(graph: Graph): MutableList<Pin> {
-        return links.stream().map { graph.findByInput(it) }.collect(Collectors.toList())!!
+    fun outputs(graph: Graph, listIn: MutableList<Pin>? = null): MutableList<Pin>? {
+        val list = listIn ?: ArrayList()
+        if (listIn != null)
+            list.clear()
+        if (links.isNotEmpty())
+            graph.nodes.forEach { node ->
+                node.pins.forEach { pin ->
+                    if (links.contains(pin.id))
+                        list.add(pin)
+                }
+
+            }
+        return list
     }
 
     /**

@@ -29,6 +29,9 @@ class TickingNode(
     /**This will make sure that our tick method is called on the first right, if active.**/
     private var hasRunOnce = true
 
+    /**This is a buffer for the pins output, Its for performance**/
+    private val outputs = ArrayList<Pin>()
+
     /**
      * This is called in the constructor of the node. it will
      */
@@ -74,9 +77,11 @@ class TickingNode(
         if (active.get()) {
             if (++tick >= tickSpeed.get()) {
                 val tickOutput = findPinWithLabel("OnTick") ?: return
-                for (output in tickOutput.outputs(graph)) {
-                    output.nodeId ?: continue
-                    val node = graph.findById(output.nodeId!!) ?: continue
+                val outputs = tickOutput.outputs(graph, this.outputs) ?: return
+                for (output in outputs) {
+                    if (output.nodeId == null) continue
+                    val id = output.nodeId ?: continue
+                    val node = graph.findById(id) ?: continue
                     if (output.label == "DoTick")
                         node.doTick(world, graph)
                     else if (node is ExtractableNode && output.label == "DoExtract")

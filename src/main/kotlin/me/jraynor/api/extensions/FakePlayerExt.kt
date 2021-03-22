@@ -77,9 +77,14 @@ interface FakePlayerExt : INodeExtension {
      * This will read the player info for the given ndoe
      */
     fun readFakePlayer(tag: CompoundNBT, node: Node) {
-        this.playerId = tag.getUniqueId("fake_player_id")
-        this.showInventory.set(tag.getBoolean("show_inventory"))
-        inventory.deserializeNBT(tag.getCompound("item_in_hand"))
+        if (tag.contains("fake_player_id"))
+            this.playerId = tag.getUniqueId("fake_player_id")
+        else
+            this.playerId = UUID.randomUUID()
+        if (tag.contains("show_inventory"))
+            this.showInventory.set(tag.getBoolean("show_inventory"))
+        if (tag.contains("item_in_hand"))
+            inventory.deserializeNBT(tag.getCompound("item_in_hand"))
         val held = inventory.getStackInSlot(0)
         val fakePlayer = player ?: return
         fakePlayer.setHeldItem(Hand.MAIN_HAND, held)

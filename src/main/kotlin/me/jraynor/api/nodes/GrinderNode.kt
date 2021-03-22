@@ -19,6 +19,7 @@ import me.jraynor.util.putFloatArray
 import me.jraynor.util.toBlockPos
 import net.minecraft.block.BlockState
 import net.minecraft.entity.LivingEntity
+import net.minecraft.entity.player.PlayerEntity
 import net.minecraft.nbt.CompoundNBT
 import net.minecraft.util.DamageSource
 import net.minecraft.util.Direction
@@ -57,6 +58,8 @@ class GrinderNode(
     /***This is how much damage to apply every tick**/
     val damage: ImInt = ImInt(10)
 ) : Node() {
+    /**This is a buffer for the pins output, Its for performance**/
+    private val outputs = ArrayList<Pin>()
 
     /**This is the current state of the block. This is only present on the client.**/
     private val blockState: BlockState?
@@ -72,7 +75,7 @@ class GrinderNode(
      */
     private fun getEntityFilter(graph: Graph): IFilter<ITextComponent, *>? {
         val filterNode = findPinWithLabel("Filter") ?: return null
-        val outputs = filterNode.outputs(graph)
+        val outputs = filterNode.outputs(graph, this.outputs) ?: return null
         for (output in outputs) {
             output.id ?: continue
             val node = graph.findNodeByPinId(output.id!!)
@@ -151,7 +154,7 @@ class GrinderNode(
      */
     override fun doTick(world: World, graph: Graph) {
         super.doTick(world, graph)
-        val entities = world.getEntitiesWithinAABB(LivingEntity::class.java, box) { true }
+        val entities = world.getEntitiesWithinAABB(LivingEntity::class.java, box) { it !is PlayerEntity }
         val filter = getEntityFilter(graph)
         entities.forEach lit@{ entity ->
             if (filter == null) {

@@ -15,7 +15,7 @@ buildscript {
 apply plugin: 'net.minecraftforge.gradle'
 apply plugin: 'kotlin'
 
-version = '1.0.1'
+version = '1.0.2.2'
 group = 'me.jraynor.bpm'
 archivesBaseName = 'bpm'
 
@@ -147,6 +147,15 @@ compileKotlin {
 // Include assets and data from data generators
 sourceSets.main.resources {
     srcDirs 'src/generated/resources/'
+}
+
+task output(type: Copy) {
+    dependsOn "reobfJar"
+    from "build/reobfJar"
+    into 'output'
+    rename { String fileName ->
+        fileName.replace("output", "bpm-${project.version}")
+    }
 }
 
 jar {

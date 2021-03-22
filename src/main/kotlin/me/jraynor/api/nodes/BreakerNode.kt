@@ -7,6 +7,7 @@ import imgui.flag.ImGuiCond
 import imgui.type.ImBoolean
 import me.jraynor.api.Graph
 import me.jraynor.api.Node
+import me.jraynor.api.Pin
 import me.jraynor.api.data.Buffers
 import me.jraynor.api.extensions.*
 import net.minecraft.item.ItemStack
@@ -17,6 +18,7 @@ import net.minecraft.world.World
 import net.minecraftforge.items.IItemHandler
 import net.minecraftforge.items.ItemStackHandler
 import java.util.*
+import kotlin.collections.ArrayList
 
 /**
  * This node is magical. It can place blocks into the world, it can right click with certain items in hand. It can drop
@@ -34,7 +36,8 @@ class BreakerNode(
     override var showColor: FloatArray = floatArrayOf(1f, 0f, 0f),
     override var inventory: Buffers.ItemHandlerBuffer = Buffers.ItemHandlerBuffer(1),
     override val useInputForPlacement: Boolean = false,
-    override val showInventory: ImBoolean = ImBoolean(false)
+    override val showInventory: ImBoolean = ImBoolean(false),
+    override val outputs: MutableList<Pin> = ArrayList()
 ) : Node(), FakePlayerExt, SelectableBlockExt, TickableExt, FilterExt {
 
     /**

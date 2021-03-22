@@ -39,6 +39,9 @@ interface FilterExt : INodeExtension {
     val filterIndent: Float
         get() = 100f
 
+    /**This is a buffer for the pins output, Its for performance**/
+    val outputs: MutableList<Pin>
+
     /**
      * This hooks our methods needed for a fake player .
      */
@@ -58,7 +61,7 @@ interface FilterExt : INodeExtension {
      */
     fun getItemFilter(nodeIn: Node, graph: Graph): IFilter<ItemStack, IItemHandler>? {
         val filterNode = nodeIn.findPinWithLabel("Filter") ?: return null
-        val outputs = filterNode.outputs(graph)
+        val outputs = filterNode.outputs(graph, this.outputs) ?: return null
         for (output in outputs) {
             output.id ?: continue
             val node = graph.findNodeByPinId(output.id!!)
@@ -73,7 +76,7 @@ interface FilterExt : INodeExtension {
      */
     fun getTextFilter(nodeIn: Node, graph: Graph): IFilter<ITextComponent, Any>? {
         val filterNode = nodeIn.findPinWithLabel("Filter") ?: return null
-        val outputs = filterNode.outputs(graph)
+        val outputs = filterNode.outputs(graph, this.outputs) ?: return null
         for (output in outputs) {
             output.id ?: continue
             val node = graph.findNodeByPinId(output.id!!)

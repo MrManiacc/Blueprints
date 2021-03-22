@@ -110,7 +110,7 @@ class HopperNode(
      */
     private fun doItemSuckUp(serverWorld: World, graph: Graph) {
         val filter = getItemFilter(graph)
-        val entities = serverWorld.getEntitiesWithinAABB(ItemEntity::class.java, box) { true }
+        val entities = serverWorld.getLoadedEntitiesWithinAABB(ItemEntity::class.java, box) { true }
         entities.forEach { entity ->
             val stack = entity.item
             sourceBuffer.setStackInSlot(0, stack)

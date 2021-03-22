@@ -28,6 +28,8 @@ abstract class ExtractableNode(
     /**Whether or not we have a tick**/
     val hasTick: Boolean = false
 ) : Node() {
+    /**This is a buffer for the pins output, Its for performance**/
+    private val outputs = ArrayList<Pin>()
 
     /**
      * This is called when the node is added to the graph. At this point the node's id should be set so we can
@@ -46,7 +48,7 @@ abstract class ExtractableNode(
      */
     protected fun getItemFilter(graph: Graph): IFilter<ItemStack, IItemHandler>? {
         val filterNode = findPinWithLabel("Filter") ?: return null
-        val outputs = filterNode.outputs(graph)
+        val outputs = filterNode.outputs(graph, this.outputs) ?: return null
         for (output in outputs) {
             output.id ?: continue
             val node = graph.findNodeByPinId(output.id!!)
@@ -165,7 +167,7 @@ abstract class ExtractableNode(
         parent ?: return
         val blockPos = parent!!.blockPos ?: return
         val extract = findPinWithLabel("Extract") ?: return
-        val outputs = extract.outputs(graph)
+        val outputs = extract.outputs(graph, this.outputs) ?: return
         var anyUpdated = false
         for (output in outputs) {
             output.nodeId ?: continue

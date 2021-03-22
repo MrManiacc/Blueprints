@@ -52,7 +52,7 @@ import kotlin.collections.HashMap
         /**This is called from the logical server. It should create the world data**/
         whenClient {
             if (uuid == null)
-                Network.sendToServer(PacketUUIDRequest(this.pos))
+                println("Found invalid uuid for client!")
             if (clientGraph != null && clientGraph!!.blockPos == null)
                 clientGraph!!.blockPos = this.pos
 
@@ -85,10 +85,14 @@ import kotlin.collections.HashMap
         if (!loaded) {
             Network.addListeners(this)
             whenServer {
-                if (uuid == null) uuid = UUID.randomUUID()
+                if (uuid == null) {
+                    uuid = UUID.randomUUID()
+                    Network.sendToAllClients(PacketUUIDResponse(this.pos, this.uuid))
+                }
             }
             whenClient {
-                Network.sendToServer(PacketUUIDRequest(this.pos))
+                if (uuid == null)
+                    Network.sendToServer(PacketUUIDRequest(this.pos))
             }
             if (load(this))
                 println("Loaded singularity tile at $pos")
@@ -294,7 +298,7 @@ import kotlin.collections.HashMap
         private val clientLoaded = HashMap<BlockPos, SingularityTile>()
 
         /**
-         * This add the tile to the laoded list
+         * This add the tile to the loaded list
          */
         private fun load(tile: SingularityTile): Boolean {
             if (isLoaded(tile) || tile.pos == null || tile.world == null) return false

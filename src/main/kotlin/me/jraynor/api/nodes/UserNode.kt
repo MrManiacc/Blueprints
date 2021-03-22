@@ -52,12 +52,14 @@ class UserNode(
      */
     override fun readFakePlayer(tag: CompoundNBT, node: Node) {
         super.readFakePlayer(tag, node)
-        player?.setPosition(
-            this.selectedBlock!!.x.toDouble(),
-            this.selectedBlock!!.y.toDouble(),
-            this.selectedBlock!!.z.toDouble()
-        )
-        player?.rotationYaw = selectedFace?.opposite?.yawFromFacing
+        if (selectedBlock != null)
+            player?.setPosition(
+                this.selectedBlock!!.x.toDouble(),
+                this.selectedBlock!!.y.toDouble(),
+                this.selectedBlock!!.z.toDouble()
+            )
+        if (selectedFace != null)
+            player?.rotationYaw = selectedFace?.opposite?.yawFromFacing
     }
 
     /**
