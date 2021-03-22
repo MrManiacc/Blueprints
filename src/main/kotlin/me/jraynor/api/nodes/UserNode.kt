@@ -11,7 +11,9 @@ import me.jraynor.api.data.Buffers
 import me.jraynor.api.extensions.*
 import me.jraynor.util.extractNext
 import me.jraynor.util.simulateNext
+import me.jraynor.util.yawFromFacing
 import net.minecraft.item.ItemStack
+import net.minecraft.nbt.CompoundNBT
 import net.minecraft.util.Direction
 import net.minecraft.util.math.BlockPos
 import net.minecraft.world.World
@@ -46,6 +48,19 @@ class UserNode(
         get() = false
 
     /**
+     * This allows us to read the position data when reading the player
+     */
+    override fun readFakePlayer(tag: CompoundNBT, node: Node) {
+        super.readFakePlayer(tag, node)
+        player?.setPosition(
+            this.selectedBlock!!.x.toDouble(),
+            this.selectedBlock!!.y.toDouble(),
+            this.selectedBlock!!.z.toDouble()
+        )
+        player?.rotationYaw = selectedFace?.opposite?.yawFromFacing
+    }
+
+    /**
      * This will try to break the block at the selected position
      */
     override fun doTick(world: World, graph: Graph) {
@@ -65,20 +80,11 @@ class UserNode(
             return ActionResultType.FAIL
         if (selectedFace == null)
             return ActionResultType.FAIL
-//
-//        player?.setPosition(
-//            this.selectedBlock!!.x.toDouble(),
-//            this.selectedBlock!!.y.toDouble(),
-//            this.selectedBlock!!.z.toDouble()
-//        )
-//        player?.rotationYaw = selectedFace?.opposite?.yawFromFacing
         val placementOn = selectedFace ?: player!!.adjustedHorizontalFacing
         val result = BlockRayTraceResult(
             player!!.lookVec, placementOn,
             selectedBlock!!, true
         )
-        //processRightClick
-        //it becomes CONSUME result 1 bucket. then later i guess it doesnt save, and then its water_bucket again
         return player!!.interactionManager.func_219441_a(
             player!!, world,
             itemStack, Hand.MAIN_HAND, result

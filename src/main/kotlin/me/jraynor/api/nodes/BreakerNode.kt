@@ -48,8 +48,7 @@ class BreakerNode(
         if (filter != null)
             if (!filter.filter(block.block.translatedName, null, null).value)
                 return
-        if (player?.interactionManager?.tryHarvestBlock(blockPos) == true)
-            println("Broke block!")
+        player?.interactionManager?.tryHarvestBlock(blockPos)
     }
 
     /**

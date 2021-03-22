@@ -15,7 +15,7 @@ buildscript {
 apply plugin: 'net.minecraftforge.gradle'
 apply plugin: 'kotlin'
 
-version = '1.0.0'
+version = '1.0.1'
 group = 'me.jraynor.bpm'
 archivesBaseName = 'bpm'
 
