@@ -47,9 +47,9 @@ class BreakerNode(
         val filter = getTextFilter(this, graph)
         super.doTick(world, graph)
         val blockPos = selectedBlock ?: return
-        val block = world.getBlockState(blockPos)
+        val block = ItemStack(world.getBlockState(blockPos).block)
         if (filter != null)
-            if (!filter.filter(block.block.translatedName, null, null).value)
+            if (!filter.filter(block.textComponent, null, null).value)
                 return
         player?.interactionManager?.tryHarvestBlock(blockPos)
     }

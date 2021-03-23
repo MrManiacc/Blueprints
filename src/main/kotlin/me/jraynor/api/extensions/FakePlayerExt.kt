@@ -149,6 +149,12 @@ interface FakePlayerExt : INodeExtension {
          * It will store the player if it's not present. This should only be called from the server
          */
         operator fun get(world: ServerWorld, uuid: UUID): FakePlayer {
+            val worldPlayer = world.getPlayerByUuid(uuid)
+            if (worldPlayer != null && worldPlayer is FakePlayer) {
+                if (!this.fakePlayers.containsKey(uuid))
+                    this.fakePlayers[uuid] = worldPlayer
+                return worldPlayer
+            }
             if (fakePlayers.containsKey(uuid)) return fakePlayers[uuid]!!
             val player = FakePlayer(world, GameProfile(uuid, "bpm_player_$uuid"))
             player.isOnGround = true
@@ -157,6 +163,7 @@ interface FakePlayerExt : INodeExtension {
                     override fun sendPacket(packetIn: IPacket<*>) {}
                 }, player)
             player.isSilent = true
+            player.setNoGravity(true)
             fakePlayers[uuid] = player
             return player
         }

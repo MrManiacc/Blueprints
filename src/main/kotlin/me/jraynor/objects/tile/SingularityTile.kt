@@ -163,7 +163,7 @@ import kotlin.collections.HashMap
         packet.x ?: return false
         packet.y ?: return false
         with(serverGraph) {
-            val node = findById(packet.nodeId!!) ?: return false
+            val node = findById(packet.nodeId!!) ?: return true
             node.pos = Pair(packet.x!!, packet.y!!)
             worldData.markDirty()
             println("Moved node with id: '${packet.nodeId}'")

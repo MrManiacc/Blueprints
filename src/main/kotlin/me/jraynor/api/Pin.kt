@@ -156,7 +156,7 @@ class Pin(
      * This will start the pinl
      */
     fun beginPin() {
-        NodeEditor.beginPin(id!!.toLong(), if (io!! == IO.OUTPUT) NodeEditorPinKind.Output else NodeEditorPinKind.Input)
+        NodeEditor.beginPin(id!!.toLong(), if (io == IO.OUTPUT) NodeEditorPinKind.Output else NodeEditorPinKind.Input)
     }
 
     /**

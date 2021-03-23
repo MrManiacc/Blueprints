@@ -18,7 +18,6 @@ import net.minecraftforge.event.world.WorldEvent
 
 import net.minecraftforge.fml.LogicalSide
 
-
 /**
  * This will listener to the client/server specific events.
  */
@@ -29,12 +28,11 @@ internal object Listeners {
      */
     fun register(modBus: KotlinEventBus, forgeBus: KotlinEventBus) {
         modBus.addListener(Common::onCommonSetup)
-        forgeBus.addListener(Common::onBlockBreak)
+//        forgeBus.addListener(Common::onBlockBreak)
         modBus.addListener(Common::onLoadCComplete)
         forgeBus.addListener(Common::onWorldUnload)
         PlayerHooks.register(modBus, forgeBus)
     }
-
 
     /**
      * This will register the client eventsl
@@ -63,34 +61,16 @@ internal object Listeners {
          * This will destory the current imgui instance
          */
         internal fun onWorldUnload(event: WorldEvent.Unload) {
-            whenClient(logical = false) {
-                runOnRender {
-                    Gui.destroy()
-                }
+            SingularityTile.forEach(LogicalSide.SERVER) {
+                it.onUnload()
+                true
             }
-            whenServer { //If we're on the server, we want to unload all of it
-                SingularityTile.forEach(LogicalSide.SERVER) {
-                    it.onUnload()
-                    true //We want to remove the tile
-                }
+            SingularityTile.forEach(LogicalSide.CLIENT) {
+                it.onUnload()
+                true //We want to remove the tile
             }
         }
 
-        /**
-         * This is called when a block is broken on both the client and server
-         */
-        internal fun onBlockBreak(event: BreakEvent) {
-            val tile = event.world.getTileEntity(event.pos)
-            whenServer {
-                if (tile != null && tile is SingularityTile) {
-                    if (tile.loaded) {
-                        tile.onUnload()
-                        SingularityTile.unload(tile)
-                    }
-                }
-
-            }
-        }
         /**
          * This is for initializing anything that's shared acorss the client
          * and server.

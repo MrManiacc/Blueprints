@@ -19,6 +19,7 @@ import me.jraynor.api.Node
 import me.jraynor.api.Pin
 import me.jraynor.util.*
 import org.lwjgl.glfw.GLFW
+import java.util.*
 import kotlin.reflect.KMutableProperty
 
 /**
@@ -45,6 +46,9 @@ object Gui {
 
     /**This is the links ending pin**/
     private val linkId: ImLong = ImLong()
+
+    /**This is the links ending pin**/
+    private val nodeId: ImLong = ImLong()
 
     /**This is used as the link starting in**/
     private val outputBuffer: ImLong = ImLong()
@@ -248,9 +252,9 @@ object Gui {
     /**
      * This will do the node editor equivalent fo the imnode
      */
-    private fun nodeEditor(editor: () -> Unit) {
+    private fun nodeEditor(uuid: UUID, editor: () -> Unit) {
         NodeEditor.setCurrentEditor(nodeEditorContext);
-        NodeEditor.begin("Node Editor")
+        NodeEditor.begin("Node Editor_$uuid")
         editor()
         NodeEditor.end()
     }
@@ -323,7 +327,7 @@ object Gui {
     /**
      * This will render the delete context
      */
-    private fun processRemovals(graph: Graph, onDelete: OnDeleteNode) {
+    private fun renderRemoveNode(graph: Graph, onDelete: OnDeleteNode) {
         /**This will open a popup for deleting the currently selected node. there is a callback in the node graph**/
         if (ImGui.isPopupOpen("node_context")) {
             val targetNode = ImGui.getStateStorage().getInt(ImGui.getID("delete_node_id"))
@@ -331,8 +335,7 @@ object Gui {
                 if (ImGui.button("Delete node")) {
                     val toRemove = graph.findById(targetNode)
                     if (toRemove != null) {
-                        NodeEditor.deleteNode(toRemove.id!!.toLong())
-                        graph.remove(toRemove)
+                        NodeEditor.deleteNode(targetNode.toLong())
                         onDelete(toRemove)
                     }
                     ImGui.closeCurrentPopup()
@@ -363,7 +366,7 @@ object Gui {
     /**
      * This is the logic for when a link is removed
      */
-    private fun processLinkRemoval(
+    private fun processRemoves(
         graph: Graph,
         deleteLink: OnDeleteLink
     ) {
@@ -382,8 +385,14 @@ object Gui {
                     }
                 }
             }
-            NodeEditor.endDelete()
+            if (NodeEditor.queryDeletedNode(nodeId)) {
+                if (NodeEditor.acceptDeletedItem()) {
+                    graph.remove(nodeId.get().toInt())
+                    println("Removed node with id ${nodeId.get()}")
+                }
+            }
         }
+        NodeEditor.endDelete()
     }
 
     /**
@@ -400,7 +409,7 @@ object Gui {
         graph: Graph,
         vararg addNodes: AddNode
     ) {
-        nodeEditor {
+        nodeEditor(graph.uuid) {
             /**First we want to render all of the nodes**/
             for (node in graph.nodes) {
                 if (node.updateCallback == null)
@@ -414,25 +423,24 @@ object Gui {
                 if (node.initialized)
                     node.render()
             }
-            /**Then we do our callbacks for the editor creation**/
-            renderLinkContext(graph, onLink)
-            /**Then we render our links**/
-            processLinks(graph)
-            /**This will do the logical code for removing a link**/
-            processLinkRemoval(graph, onDeleteLink)
             /**This suspends our**/
             NodeEditor.suspend()
             /**This start the node editor context**/
             renderStartNodeEditor()
-
             /**This will render the node editor context and the add nodes**/
             renderBackgroundContext(firstRun)
             /**This renders the add context menu**/
             renderAddContext(graph, onAdd, *addNodes)
             /**This renders the delete context**/
-            processRemovals(graph, onDelete)
+            renderRemoveNode(graph, onDelete)
             /**Resumes the current context**/
             NodeEditor.resume()
+            /**Then we do our callbacks for the editor creation**/
+            renderLinkContext(graph, onLink)
+            /**Then we render our links**/
+            processLinks(graph)
+            /**This will do the logical code for removing a link**/
+            processRemoves(graph, onDeleteLink)
             if (firstRun.getter.call()) {
                 firstRun.setter.call(false)
                 NodeEditor.navigateToContent(0.0f)

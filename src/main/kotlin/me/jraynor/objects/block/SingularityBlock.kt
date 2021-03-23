@@ -5,9 +5,13 @@ import me.jraynor.objects.screens.ScreenBlueprint
 import me.jraynor.objects.tile.SingularityTile
 import net.minecraft.block.*
 import net.minecraft.client.Minecraft
+import net.minecraft.entity.LivingEntity
 import net.minecraft.entity.player.PlayerEntity
 import net.minecraft.entity.player.ServerPlayerEntity
 import net.minecraft.item.BlockItemUseContext
+import net.minecraft.item.ItemStack
+import net.minecraft.loot.LootContext
+import net.minecraft.nbt.CompoundNBT
 import net.minecraft.state.StateContainer
 import net.minecraft.state.properties.BlockStateProperties
 import net.minecraft.tileentity.TileEntity
@@ -15,6 +19,7 @@ import net.minecraft.util.ActionResultType
 import net.minecraft.util.Hand
 import net.minecraft.util.math.BlockPos
 import net.minecraft.util.math.BlockRayTraceResult
+import net.minecraft.util.math.RayTraceResult
 import net.minecraft.world.IBlockReader
 import net.minecraft.world.World
 
@@ -50,6 +55,29 @@ class SingularityBlock : Block(Properties.from(Blocks.COBBLESTONE)) {
         return Registry.Tiles.SINGULARITY_TILE.create()
     }
 
+
+    override fun getPickBlock(
+        state: BlockState?,
+        target: RayTraceResult?,
+        world: IBlockReader?,
+        pos: BlockPos?,
+        player: PlayerEntity?
+    ): ItemStack {
+
+        return super.getPickBlock(state, target, world, pos, player)
+    }
+
+    /**
+     * This is called when the player breaks the block. We want to unload the tile.
+     */
+    override fun onBlockHarvested(worldIn: World, pos: BlockPos, state: BlockState, player: PlayerEntity) {
+        super.onBlockHarvested(worldIn, pos, state, player)
+        val tile = worldIn.getTileEntity(pos) ?: return
+        if (tile is SingularityTile) {
+            tile.onUnload()
+            SingularityTile.unload(tile)
+        }
+    }
 
 
     /**
