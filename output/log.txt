@@ -1,4 +1,4 @@
-Args: "--in-jar", "C:\Dev\Blueprints\build\libs\bpm-1.0.2.4.jar", "--out-jar", "C:\Dev\Blueprints\build\reobfJar\output.jar", "--srg-in", "C:\Dev\Blueprints\build\createMcpToSrg\output.tsrg", "--live"
+Args: "--in-jar", "C:\Dev\Blueprints\build\libs\bpm-1.0.2.5.jar", "--out-jar", "C:\Dev\Blueprints\build\reobfJar\output.jar", "--srg-in", "C:\Dev\Blueprints\build\createMcpToSrg\output.tsrg", "--live"
 Classpath: C:\Users\vtboy\.gradle\caches\forge_gradle\maven_downloader\net\md-5\SpecialSource\1.8.3\SpecialSource-1.8.3-shaded.jar
 Classpath: C:\Users\vtboy\.gradle\caches\modules-2\files-2.1\thedarkcolour\kotlinforforge\1.10.0\a6b7d88f1f97a990091b2eabad8e52c560eb9a3c\kotlinforforge-1.10.0.jar
 Classpath: C:\Users\vtboy\.gradle\caches\modules-2\files-2.1\org.jetbrains.kotlin\kotlin-stdlib-jdk8\1.4.31\e613be5465ef1e6fd0468707690b7ebf625ea2fe\kotlin-stdlib-jdk8-1.4.31.jar

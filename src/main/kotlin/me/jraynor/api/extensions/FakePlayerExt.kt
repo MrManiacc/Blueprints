@@ -63,11 +63,11 @@ interface FakePlayerExt : INodeExtension {
             node.add(
                 Pin(
                     io = IO.INPUT,
-                    label = "Input",
+                    label = "Insert",
                     textAfter = true,
                     computeText = false,
                     sameLine = false,
-                    icon = IconType.ROUND_SQUARE,
+                    icon = IconType.GRID,
                     innerColor = ImColor.rgbToColor("#fafafa")
                 )
             )

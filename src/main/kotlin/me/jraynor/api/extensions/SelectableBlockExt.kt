@@ -49,7 +49,6 @@ interface SelectableBlockExt : INodeExtension {
     fun readSelectedBlocks(tag: CompoundNBT, node: Node) {
         this.selectedBlock = tag.getBlockPos("selected_block_pos")
         this.selectedFace = tag.getEnum("selected_block_face")
-
     }
 
     /**
@@ -70,7 +69,8 @@ interface SelectableBlockExt : INodeExtension {
         if (ImGui.button("select##${node.id}"))
             node.pushFaceSelect()
         if (selectedBlock != null && selectedFace != null) {
-            ImGui.textDisabled("${node.getBlockName(selectedBlock!!)}, [${selectedFace!!.name.toLowerCase()}], [${this.selectedBlock!!.coords}]")
+            ImGui.text(node.getBlockName(selectedBlock!!))
+            ImGui.textDisabled("[${this.selectedBlock!!.coords}], [${selectedFace!!.name.toLowerCase()}]")
         }
     }
 

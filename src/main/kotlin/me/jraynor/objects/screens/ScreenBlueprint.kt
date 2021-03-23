@@ -47,8 +47,8 @@ class ScreenBlueprint(private val tile: SingularityTile) : Screen(StringTextComp
         }),
         Pair("new link node", {
             graph?.createNode<LinkNode>().apply {
-                this?.blockPos = BlockPos(25, 25, 25)
-                this?.blockFace = Direction.UP
+                this?.selectedBlock = BlockPos(0, 0, 0)
+                this?.selectedFace = Direction.UP
             }!!
         }),
         Pair("new filter node", {
@@ -88,11 +88,6 @@ class ScreenBlueprint(private val tile: SingularityTile) : Screen(StringTextComp
                 is SelectableBlockExt -> {
                     node.selectedBlock = it.blockPos
                     node.selectedFace = it.face
-                    pushUpdate(node)
-                }
-                is LinkNode -> {
-                    node.blockPos = it.blockPos
-                    node.blockFace = it.face
                     pushUpdate(node)
                 }
                 is HopperNode -> {

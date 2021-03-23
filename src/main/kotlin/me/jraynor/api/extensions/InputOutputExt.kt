@@ -10,10 +10,4 @@ import me.jraynor.api.extensions.Callback
  */
 interface InputOutputExt : INodeExtension {
 
-    /**
-     * This will create a new use item renderer.
-     */
-    private fun renderProperties(node: Node) {
-        ImGui.text("This is an input output node!")
-    }
 }

@@ -7,6 +7,7 @@ import imgui.flag.ImGuiCond
 import imgui.type.ImBoolean
 import me.jraynor.api.Graph
 import me.jraynor.api.Node
+import me.jraynor.api.Pin
 import me.jraynor.api.data.Buffers
 import me.jraynor.api.extensions.*
 import me.jraynor.util.extractNext
@@ -23,6 +24,7 @@ import net.minecraft.util.ActionResultType
 import net.minecraft.util.math.BlockRayTraceResult
 
 import net.minecraft.util.Hand
+import kotlin.collections.ArrayList
 
 /**
  * This node is magical. It can place blocks into the world, it can right click with certain items in hand. It can drop
@@ -38,13 +40,18 @@ class UserNode(
     override var selectedFace: Direction? = null,
     override var shown: ImBoolean = ImBoolean(false),
     override var showColor: FloatArray = floatArrayOf(1f, 0f, 0f),
-    override var inventory: Buffers.ItemHandlerBuffer = Buffers.ItemHandlerBuffer(64),
+    override var inventory: Buffers.ItemHandlerBuffer = Buffers.ItemHandlerBuffer(),
     override val useInputForPlacement: Boolean = true,
-    override val showInventory: ImBoolean = ImBoolean(false)
-) : Node(), FakePlayerExt, SelectableBlockExt, TickableExt {
+    override val showInventory: ImBoolean = ImBoolean(false),
+    override val outputs: MutableList<Pin> = ArrayList()
+) : Node(), FakePlayerExt, FilterExt, SelectableBlockExt, TickableExt {
 
     /**We want our input to be on a new line**/
     override val tickableOnSameLine: Boolean
+        get() = true
+
+    /***Push the filter to a new line**/
+    override val filterOnSameLine: Boolean
         get() = false
 
     /**
@@ -67,8 +74,12 @@ class UserNode(
      */
     override fun doTick(world: World, graph: Graph) {
         super.doTick(world, graph)
+        val filter = getTextFilter(this, graph)
         val blockPos = selectedBlock ?: return
         val itemStack = inventory.simulateNext()
+        if (filter != null)
+            if (!filter.filter(ItemStack(world.getBlockState(blockPos).block).textComponent, null, null).value)
+                return
         if (rightClickBlock(world, itemStack) == ActionResultType.SUCCESS) {
             inventory.extractNext()
             pushServerUpdates(world, blockPos, graph)
@@ -131,6 +142,7 @@ class UserNode(
         writeCalls: MutableList<NBTCallback>
     ) {
         super<TickableExt>.hook(nodeRenders, propertyRenders, pinAdds, tickCalls, readCalls, writeCalls)
+        super<FilterExt>.hook(nodeRenders, propertyRenders, pinAdds, tickCalls, readCalls, writeCalls)
         super<SelectableBlockExt>.hook(nodeRenders, propertyRenders, pinAdds, tickCalls, readCalls, writeCalls)
         super<FakePlayerExt>.hook(nodeRenders, propertyRenders, pinAdds, tickCalls, readCalls, writeCalls)
     }

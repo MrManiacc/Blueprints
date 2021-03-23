@@ -4,6 +4,7 @@ import me.jraynor.api.Node
 import me.jraynor.api.data.Buffers
 import me.jraynor.api.enums.Mode
 import me.jraynor.api.extensions.FakePlayerExt
+import me.jraynor.api.extensions.SelectableBlockExt
 import me.jraynor.api.nodes.BufferNode
 import me.jraynor.api.nodes.HopperNode
 import me.jraynor.api.nodes.LinkNode
@@ -37,29 +38,31 @@ fun interface IResolver<H : Any> {
 
         init {
             add(IItemHandler::class.java) { node, world ->
-                if (node is LinkNode) {
-                    if (node.blockPos != null) {
-                        val tile = world.getTileEntity(node.blockPos!!) ?: return@add Return.of(LazyOptional.empty())
+                if (node is FakePlayerExt)
+                    return@add Return.of(LazyOptional.of { node.inventory }) //This just makes it so we can always insert.
+                else if (node is SelectableBlockExt) {
+                    if (node.selectedBlock != null) {
+                        val tile =
+                            world.getTileEntity(node.selectedBlock!!) ?: return@add Return.of(LazyOptional.empty())
                         var cap = tile.getCapability(CapabilityItemHandler.ITEM_HANDLER_CAPABILITY)
-                        if (node.blockFace != null)
-                            cap = tile.getCapability(CapabilityItemHandler.ITEM_HANDLER_CAPABILITY, node.blockFace!!)
+                        if (node.selectedFace != null)
+                            cap = tile.getCapability(CapabilityItemHandler.ITEM_HANDLER_CAPABILITY, node.selectedFace!!)
                         if (cap.isPresent) return@add Return.of(cap)
                     }
                 } else if (node is BufferNode)
                     return@add Return.of(node.buffers[IItemHandler::class.java])
                 else if (node is HopperNode)
                     return@add Return.of(node.buffers[IItemHandler::class.java])
-                else if (node is FakePlayerExt)
-                    return@add Return.of(LazyOptional.of { node.inventory }) //This just makes it so we can always insert.
                 Return.of(LazyOptional.empty())
             }
             add(IEnergyStorage::class.java) { node, world ->
-                if (node is LinkNode) {
-                    if (node.blockPos != null) {
-                        val tile = world.getTileEntity(node.blockPos!!) ?: return@add Return.of(LazyOptional.empty())
+                if (node is SelectableBlockExt) {
+                    if (node.selectedBlock != null) {
+                        val tile =
+                            world.getTileEntity(node.selectedBlock!!) ?: return@add Return.of(LazyOptional.empty())
                         var cap = tile.getCapability(CapabilityEnergy.ENERGY)
-                        if (node.blockFace != null)
-                            cap = tile.getCapability(CapabilityEnergy.ENERGY, node.blockFace!!)
+                        if (node.selectedFace != null)
+                            cap = tile.getCapability(CapabilityEnergy.ENERGY, node.selectedFace!!)
                         if (cap.isPresent) return@add Return.of(cap)
                     }
                 } else if (node is BufferNode)
@@ -68,18 +71,18 @@ fun interface IResolver<H : Any> {
             }
             add(IFluidHandler::class.java) { node, world ->
                 if (node is LinkNode) {
-                    if (node.blockPos != null) {
-                        val tile = world.getTileEntity(node.blockPos!!) ?: return@add Return.of(LazyOptional.empty())
+                    if (node.selectedBlock != null) {
+                        val tile =
+                            world.getTileEntity(node.selectedBlock!!) ?: return@add Return.of(LazyOptional.empty())
                         var cap = tile.getCapability(CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY)
-                        if (node.blockFace != null)
-                            cap = tile.getCapability(CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY, node.blockFace!!)
+                        if (node.selectedFace != null)
+                            cap =
+                                tile.getCapability(CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY, node.selectedFace!!)
                         if (cap.isPresent) return@add Return.of(cap)
                     }
                 }
                 Return.of(LazyOptional.empty())
             }
-
-
         }
 
         /**
@@ -110,7 +113,5 @@ fun interface IResolver<H : Any> {
         inline fun <reified T : Any> resolve(node: Node, world: World): LazyOptional<T> {
             return resolve(T::class.java, node, world)
         }
-
-
     }
 }
