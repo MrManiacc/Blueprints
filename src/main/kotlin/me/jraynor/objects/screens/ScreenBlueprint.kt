@@ -37,6 +37,9 @@ class ScreenBlueprint(private val tile: SingularityTile) : Screen(StringTextComp
     /**This is used as a buffer for the selected links**/
     private val selectedNodes: LongArray = LongArray(100) { -1 } //100  links max
 
+    /**This is the currently selected node**/
+    private var selectedNode: Node? = null
+
     /**This stores the pairs for our add node**/
     private val addNodes: Array<AddNode> = arrayOf(
         Pair("new tick node", {
@@ -67,9 +70,6 @@ class ScreenBlueprint(private val tile: SingularityTile) : Screen(StringTextComp
             graph?.createNode<UserNode>()!!
         })
     )
-
-    /**This is used for rendering the node inside the node properties window**/
-    private val nodeStack: Stack<Node> = Stack()
 
     /**
      * This method will push the update to the server
@@ -150,11 +150,10 @@ class ScreenBlueprint(private val tile: SingularityTile) : Screen(StringTextComp
     private fun pushSelectedNodes() {
         selectedNodes.fill(-1, 0, selectedNodes.size)
         NodeEditor.getSelectedNodes(selectedNodes, selectedNodes.size)
-        for (i in selectedNodes.indices) {
-            val nodeId = if (selectedNodes[i] != -1L) selectedNodes[i].toInt() else return
+        if (selectedNodes.isNotEmpty()) {
+            val nodeId = if (selectedNodes[0] != -1L) selectedNodes[0].toInt() else return
             val node = if (graph?.hasNode(nodeId) == true) graph?.findById(nodeId) else return
-//            if (nodeStack.search(node) == -1) //If there's no node on the node stack
-            nodeStack.push(node)
+            selectedNode = node
         }
     }
 
@@ -162,7 +161,11 @@ class ScreenBlueprint(private val tile: SingularityTile) : Screen(StringTextComp
      * This will pop the selected nodes and
      */
     private fun popSelectedNodes(consumer: (node: Node) -> Unit) {
-        nodeStack.consumeNext(consumer)
+        if (selectedNode != null) {
+            consumer(selectedNode!!)
+            selectedNode = null
+        }
+
     }
 
     /**

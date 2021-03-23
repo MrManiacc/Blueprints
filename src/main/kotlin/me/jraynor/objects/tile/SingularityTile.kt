@@ -82,18 +82,18 @@ import kotlin.collections.HashMap
      */
     override fun onLoad() {
         super.onLoad()
+        whenServer {
+            if (uuid == null) {
+                uuid = UUID.randomUUID()
+                Network.sendToAllClients(PacketUUIDResponse(this.pos, this.uuid))
+            }
+        }
+        whenClient {
+            if (uuid == null)
+                Network.sendToServer(PacketUUIDRequest(this.pos))
+        }
         if (!loaded) {
             Network.addListeners(this)
-            whenServer {
-                if (uuid == null) {
-                    uuid = UUID.randomUUID()
-                    Network.sendToAllClients(PacketUUIDResponse(this.pos, this.uuid))
-                }
-            }
-            whenClient {
-                if (uuid == null)
-                    Network.sendToServer(PacketUUIDRequest(this.pos))
-            }
             if (load(this))
                 println("Loaded singularity tile at $pos")
         }

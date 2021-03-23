@@ -66,10 +66,6 @@ internal object Listeners {
             whenClient(logical = false) {
                 runOnRender {
                     Gui.destroy()
-                    SingularityTile.forEach(LogicalSide.CLIENT) {
-                        it.onUnload()
-                        true
-                    }
                 }
             }
             whenServer { //If we're on the server, we want to unload all of it
@@ -85,35 +81,16 @@ internal object Listeners {
          */
         internal fun onBlockBreak(event: BreakEvent) {
             val tile = event.world.getTileEntity(event.pos)
-            if (tile != null && tile is SingularityTile) {
-                if (tile.loaded) {
-                    tile.onUnload()
-                    SingularityTile.unload(tile)
-                }
-            }
-        }
-
-        /**
-         * This will load the imgui context
-         */
-        internal fun onServerStopping(event: FMLServerStoppingEvent) {
-            whenClient(false) { //When we're on the client instance, we will do the tasks on the client thread.
-                runOnClient { //Here we make sure to run this unloading code on the client
-                    Gui.destroy()
-                    SingularityTile.forEach(LogicalSide.CLIENT) {
-                        it.onUnload()
-                        true
+            whenServer {
+                if (tile != null && tile is SingularityTile) {
+                    if (tile.loaded) {
+                        tile.onUnload()
+                        SingularityTile.unload(tile)
                     }
                 }
-            }
-            whenServer { //If we're on the server, we want to unload all of it
-                SingularityTile.forEach(LogicalSide.SERVER) {
-                    it.onUnload()
-                    true //We want to remove the tile
-                }
+
             }
         }
-
         /**
          * This is for initializing anything that's shared acorss the client
          * and server.
