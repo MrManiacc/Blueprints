@@ -34,13 +34,13 @@ class FilterNode(
      * This is the handler for the item filter
      */
     val itemFilter: IFilter<ItemStack, IItemHandler> = IFilter { test, _, _ ->
-        val name = test.textComponent.string
+        val name = test.textComponent.string.toLowerCase()
         if (test.isEmpty)
             return@IFilter Return.of(false)
         else {
             var hasMatch = false
             for (regex in regexList) {
-                if (regex.toRegex().containsMatchIn(name)) {
+                if (regex.toLowerCase().toRegex().containsMatchIn(name)) {
                     hasMatch = true
                     break
                 }

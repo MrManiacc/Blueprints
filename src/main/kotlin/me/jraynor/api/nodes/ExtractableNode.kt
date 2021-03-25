@@ -169,10 +169,10 @@ abstract class ExtractableNode(
         val extract = findPinWithLabel("Extract") ?: return
         val outputs = extract.outputs(graph, this.outputs) ?: return
         var anyUpdated = false
+        modes.forEach { mode, speed ->
         for (output in outputs) {
             output.nodeId ?: continue
             val node = graph.findById(output.nodeId!!) ?: continue
-            modes.forEach { mode, speed ->
                 val source = IResolver.resolve(mode.type, this, serverWorld)
                 val target = IResolver.resolve(mode.type, node, serverWorld)
                 val updated = if (filter == null)

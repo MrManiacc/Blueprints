@@ -71,7 +71,8 @@ import kotlin.collections.HashMap
         with(serverGraph) {
             for (node in nodes) {
                 if (node is TickingNode) {
-                    node.doTick(world!!, this)
+                    if (node.active.get())
+                        node.doTick(world!!, this)
                 }
             }
         }

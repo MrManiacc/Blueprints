@@ -31,7 +31,7 @@ data class Graph(
     var nextNodeId: Int = 1
 
     /**Stores the next id for the pin**/
-    var nextPinId = 20_000
+    var nextPinId = 20_0000
 
     /**
      * This will write the group
@@ -54,15 +54,23 @@ data class Graph(
      */
     override fun deserializeNBT(tag: CompoundNBT) {
         this.uuid = tag.getUUID("uuid") ?: return
+        this.nodes.clear()
         this.nextNodeId = tag.getInt("next_node_id")
         this.nextPinId = tag.getInt("next_pin_id")
-        this.nodes.clear()
         val size = tag.getInt("size")
         for (i in 0 until size) {
             val cls = tag.getClass("node_class_$i")
             if (Node::class.java.isAssignableFrom(cls)) {
                 val node = cls.newInstance() as Node
                 node.deserializeNBT(tag.getCompound("node_$i"))
+                if (node.id != null)
+                    if (node.id == nextNodeId)
+                        nextNodeId++
+                node.pins.forEach {
+                    if (it.id != null)
+                        if (it.id == nextPinId)
+                            nextPinId++
+                }
                 add(node)
             }
         }
@@ -121,16 +129,6 @@ data class Graph(
         return findById(nodeId) != null
     }
 
-    /**
-     * Finds a node via it's output
-     */
-    fun findByLinkId(linkId: Int): Pin? {
-        for (node in nodes)
-            for (port in node.pins)
-                if (port.linkIds.containsKey(linkId))
-                    return port
-        return null
-    }
 
     /**
      * Finds a node via it's output

@@ -57,10 +57,14 @@ object PlayerHooks {
      */
     private fun onTick(event: TickEvent.ClientTickEvent) {
         if (context.valid) {
-            val result = rayTraceBlock(context.player, context.world, 50)
-            if (!result.isInside) {
-                context.currentBlock = result.pos
-                context.currentFace = result.face
+            if (context.player == null)
+                context.invalidate()
+            else {
+                val result = rayTraceBlock(context.player!!, context.world, 50)
+                if (!result.isInside) {
+                    context.currentBlock = result.pos
+                    context.currentFace = result.face
+                }
             }
         }
     }

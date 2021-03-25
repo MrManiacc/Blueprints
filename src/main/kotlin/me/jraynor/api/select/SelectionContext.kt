@@ -28,7 +28,7 @@ data class SelectionContext(
     val ready: Boolean get() = currentBlock != null && currentFace != null
 
     /**The local player, which is used for the block selection**/
-    val player: PlayerEntity get() = Minecraft.getInstance().player!!
+    val player: PlayerEntity? get() = Minecraft.getInstance().player
 
     /**This will get the local world instance**/
     val world: World get() = Minecraft.getInstance().world!!

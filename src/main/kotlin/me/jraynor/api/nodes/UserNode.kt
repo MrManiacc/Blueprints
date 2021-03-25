@@ -40,7 +40,7 @@ class UserNode(
     override var selectedFace: Direction? = null,
     override var shown: ImBoolean = ImBoolean(false),
     override var showColor: FloatArray = floatArrayOf(1f, 0f, 0f),
-    override var inventory: Buffers.ItemHandlerBuffer = Buffers.ItemHandlerBuffer(),
+    override var inventory: Buffers.ItemHandlerBuffer = Buffers.ItemHandlerBuffer(1),
     override val useInputForPlacement: Boolean = true,
     override val showInventory: ImBoolean = ImBoolean(false),
     override val outputs: MutableList<Pin> = ArrayList()
@@ -59,15 +59,10 @@ class UserNode(
      */
     override fun readFakePlayer(tag: CompoundNBT, node: Node) {
         super.readFakePlayer(tag, node)
-        if (selectedBlock != null)
-            player?.setPosition(
-                this.selectedBlock!!.x.toDouble(),
-                this.selectedBlock!!.y.toDouble(),
-                this.selectedBlock!!.z.toDouble()
-            )
-        if (selectedFace != null)
-            player?.rotationYaw = selectedFace?.opposite?.yawFromFacing
+
     }
+
+    val held = inventory.getStackInSlot(0)
 
     /**
      * This will try to break the block at the selected position
@@ -76,13 +71,32 @@ class UserNode(
         super.doTick(world, graph)
         val filter = getTextFilter(this, graph)
         val blockPos = selectedBlock ?: return
+        val face = selectedFace ?: return
         val itemStack = inventory.simulateNext()
-        if (filter != null)
-            if (!filter.filter(ItemStack(world.getBlockState(blockPos).block).textComponent, null, null).value)
-                return
-        if (rightClickBlock(world, itemStack) == ActionResultType.SUCCESS) {
-            inventory.extractNext()
-            pushServerUpdates(world, blockPos, graph)
+        val fakePlayer = player ?: return
+
+        if (itemStack != ItemStack.EMPTY) {
+            fakePlayer.setPosition(
+                this.selectedBlock!!.x.toDouble(),
+                this.selectedBlock!!.y.toDouble(),
+                this.selectedBlock!!.z.toDouble()
+            )
+
+            fakePlayer.rotationYaw = selectedFace?.opposite?.yawFromFacing!!
+            fakePlayer.setHeldItem(Hand.MAIN_HAND, itemStack)
+            if (filter != null)
+                if (!filter.filter(
+                        ItemStack(world.getBlockState(blockPos.offset(face)).block).displayName,
+                        null,
+                        null
+                    ).value
+                )
+                    return
+            val result = rightClickBlock(world, itemStack)
+            if (result == ActionResultType.CONSUME || result == ActionResultType.SUCCESS) {
+                inventory.extractNext()
+                pushServerUpdates(world, blockPos, graph)
+            }
         }
     }
 
@@ -96,7 +110,7 @@ class UserNode(
         val placementOn = selectedFace ?: player!!.adjustedHorizontalFacing
         val result = BlockRayTraceResult(
             player!!.lookVec, placementOn,
-            selectedBlock!!, true
+            selectedBlock!!, false
         )
         return player!!.interactionManager.func_219441_a(
             player!!, world,

@@ -15,7 +15,7 @@ buildscript {
 apply plugin: 'net.minecraftforge.gradle'
 apply plugin: 'kotlin'
 
-version = '1.0.2.6'
+version = '1.0.2.64'
 group = 'me.jraynor.bpm'
 archivesBaseName = 'bpm'
 
@@ -122,6 +122,7 @@ dependencies {
 
     shade "io.github.spair:imgui-java-natives-windows:$imguiVersion"
     shade "io.github.spair:imgui-java-natives-macos:$imguiVersion"
+    shade "io.github.spair:imgui-java-natives-linux:$imguiVersion"
 
 
     compileOnly fg.deobf("mezz.jei:jei-${mc_version}:${jei_version}:api")

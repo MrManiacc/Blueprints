@@ -92,7 +92,7 @@ class ScreenBlueprint(private val tile: SingularityTile) : Screen(StringTextComp
                 }
                 is HopperNode -> {
                     node.center = intArrayOf(it.blockPos.x, it.blockPos.y, it.blockPos.z)
-                    pushUpdate(it.forNode)
+                    pushUpdate(node)
                 }
                 is GrinderNode -> {
                     node.center = intArrayOf(it.blockPos.x, it.blockPos.y, it.blockPos.z)
@@ -193,14 +193,10 @@ class ScreenBlueprint(private val tile: SingularityTile) : Screen(StringTextComp
         graph ?: return
         tile.uuid ?: return
         graph!!.nodes.forEach {
-            if (it.id != null && it.pos != null) {
-                val startX = it.pos!!.first
-                val startY = it.pos!!.second
-                val stopX = NodeEditor.getNodePositionX(it.id!!.toLong())
-                val stopY = NodeEditor.getNodePositionY(it.id!!.toLong())
-                if (startX != stopX || startY != stopY)
-                    Network.sendToServer(PacketNodeMove(tile.pos, tile.uuid, it.id!!, stopX, stopY))
-            }
+            val stopX = NodeEditor.getNodePositionX(it.id!!.toLong())
+            val stopY = NodeEditor.getNodePositionY(it.id!!.toLong())
+            it.pos = Pair(stopX, stopY)
+            Network.sendToServer(PacketNodeMove(tile.pos, tile.uuid, it.id!!, stopX, stopY))
         }
     }
 

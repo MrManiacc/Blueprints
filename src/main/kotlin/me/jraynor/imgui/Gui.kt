@@ -416,12 +416,10 @@ object Gui {
                     node.updateCallback = updateCallback
                 if (node.blockCallback == null)
                     node.blockCallback = blockCallback
-                if (!node.initialized && node.id != null && node.pos != null) {
+                if (firstRun.getter.call() && node.id != null && node.pos != null) {
                     NodeEditor.setNodePosition(node.id!!.toLong(), node.pos!!.first, node.pos!!.second)
-                    node.initialized = true
                 }
-                if (node.initialized)
-                    node.render()
+                node.render()
             }
             /**This suspends our**/
             NodeEditor.suspend()
@@ -443,7 +441,6 @@ object Gui {
             processRemoves(graph, onDeleteLink)
             if (firstRun.getter.call()) {
                 firstRun.setter.call(false)
-                NodeEditor.navigateToContent(0.0f)
             }
         }
     }
