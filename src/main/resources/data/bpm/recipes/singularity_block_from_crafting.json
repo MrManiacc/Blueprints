@@ -1,0 +1,26 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "cxr",
+    "xax",
+    "rxc"
+  ],
+  "key": {
+    "x": {
+      "item": "minecraft:iron_ingot"
+    },
+    "a": {
+      "item": "minecraft:diamond_block"
+    },
+    "c": {
+      "item": "minecraft:coal"
+    },
+    "r": {
+      "item": "minecraft:redstone"
+    }
+  },
+  "result": {
+    "item": "bpm:singularity",
+    "count": 1
+  }
+}

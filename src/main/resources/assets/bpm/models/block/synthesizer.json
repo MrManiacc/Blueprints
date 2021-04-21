@@ -1,0 +1,25 @@
+{
+  "parent": "item/generated",
+  "textures": {
+    "layer0": "nmw:item/synthesizer"
+  },
+  "display": {
+    "firstperson_righthand": {
+      "rotation": [
+        25,
+        90,
+        25
+      ],
+      "translation": [
+        2,
+        3,
+        -1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    }
+  }
+}
