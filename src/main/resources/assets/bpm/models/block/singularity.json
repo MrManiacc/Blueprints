@@ -1,0 +1,12 @@
+{
+  "parent": "block/cube",
+  "textures": {
+    "down": "bpm:block/singularity_block",
+    "up": "bpm:block/singularity_block",
+    "north": "bpm:block/singularity_block",
+    "south": "bpm:block/singularity_block",
+    "east": "bpm:block/singularity_block",
+    "west": "bpm:block/singularity_block",
+    "particle": "bpm:block/singularity_block"
+  }
+}

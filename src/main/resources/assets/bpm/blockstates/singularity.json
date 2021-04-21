@@ -1,0 +1,27 @@
+{
+  "variants": {
+    "facing=down": {
+      "model": "bpm:block/singularity",
+      "x": 90
+    },
+    "facing=up": {
+      "model": "bpm:block/singularity",
+      "x": -90
+    },
+    "facing=north": {
+      "model": "bpm:block/singularity"
+    },
+    "facing=south": {
+      "model": "bpm:block/singularity",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "bpm:block/singularity",
+      "y": 270
+    },
+    "facing=east": {
+      "model": "bpm:block/singularity",
+      "y": 90
+    }
+  }
+}

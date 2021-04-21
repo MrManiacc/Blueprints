@@ -1,0 +1,186 @@
+import org.gradle.internal.os.OperatingSystem
+
+buildscript {
+    repositories {
+        maven { url = 'https://files.minecraftforge.net/maven' }
+        jcenter()
+        mavenCentral()
+    }
+    dependencies {
+        classpath group: 'net.minecraftforge.gradle', name: 'ForgeGradle', version: '3.+', changing: true
+        // Make sure this version matches the one included in Kotlin for Forge
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:1.4.30"
+        // OPTIONAL Gradle plugin for Kotlin Serialization
+        classpath "org.jetbrains.kotlin:kotlin-serialization:1.4.30"
+    }
+
+}
+apply plugin: 'net.minecraftforge.gradle'
+apply plugin: 'kotlin'
+
+version = '1.0.31'
+group = 'me.jraynor.bpm'
+archivesBaseName = 'bpm'
+
+project.ext.lwjglVersion = "3.2.3"
+project.ext.imguiVersion = '1.82.1'
+
+switch (OperatingSystem.current()) {
+    case OperatingSystem.LINUX:
+        project.ext.lwjglNatives = "natives-linux"
+        break
+    case OperatingSystem.MAC_OS:
+        project.ext.lwjglNatives = "natives-macos"
+        break
+    case OperatingSystem.WINDOWS:
+        project.ext.lwjglNatives = "natives-windows"
+        break
+}
+
+sourceCompatibility = targetCompatibility = compileJava.sourceCompatibility = compileJava.targetCompatibility = '1.8'
+sourceSets {
+    api {
+        kotlin.srcDir 'src/api/kotlin'
+    }
+    main {
+        kotlin.srcDir 'src/main/kotlin'
+        compileClasspath += api.output
+        runtimeClasspath += api.output
+    }
+}
+minecraft {
+    // Change to your preferred mappings
+    mappings channel: 'snapshot', version: '20201028-1.16.3'
+    // Add your AccessTransformer
+    // accessTransformer = file('src/main/resources/META-INF/accesstransformer.cfg')
+
+    runs {
+        client {
+            workingDirectory file('run')
+
+            property 'forge.logging.console.level', 'debug'
+
+            mods {
+                bpm.sources((SourceSet[]) [sourceSets.main, sourceSets.api])
+            }
+        }
+
+        server {
+            workingDirectory file('run')
+
+            property 'forge.logging.console.level', 'debug'
+
+            mods {
+                bpm.sources((SourceSet[]) [sourceSets.main, sourceSets.api])
+            }
+        }
+
+        data {
+            workingDirectory project.file('run')
+
+            property 'forge.logging.console.level', 'debug'
+
+            args '--mod', 'bpm', '--all', '--output', file('src/generated/resources/'), '--existing', file('src/main/resources')
+
+            mods {
+                bpm {
+                    source sourceSets.main
+                }
+            }
+        }
+    }
+}
+
+repositories {
+    maven {
+        // location of the maven that hosts JEI files
+        name = "Progwml6 maven"
+        url = "https://dvs1.progwml6.com/files/maven/"
+    }
+    maven {
+        // location of a maven mirror for JEI files, as a fallback
+        name = "ModMaven"
+        url = "https://modmaven.k-4u.nl"
+    }
+    maven { url "https://maven.latmod.com/" }
+
+    mavenCentral()
+    jcenter()
+    maven {
+        name = 'Kotlin for Forge'
+        url = 'https://thedarkcolour.github.io/KotlinForForge/'
+    }
+
+    maven {
+        name = "storagedrawers"
+        url = "https://dl.bintray.com/jaquadro/dev/"
+    }
+
+}
+
+configurations {
+    shade
+    compile.extendsFrom shade
+    apiCompile.extendsFrom compile
+    apiCompile.extendsFrom compileOnly
+}
+
+dependencies {
+    // Use the latest version of Minecraft Forge
+    minecraft 'net.minecraftforge:forge:1.16.5-36.1.0'
+    shade "io.github.spair:imgui-java-binding:$imguiVersion"
+    shade "io.github.spair:imgui-java-lwjgl3:$imguiVersion"
+    shade "io.github.spair:imgui-java-natives-windows:$imguiVersion"
+    // Use the latest version of KotlinForForge
+    fg.deobf(implementation('thedarkcolour:kotlinforforge:1.10.0'))
+//    implementation "io.github.spair:imgui-java-binding:1.82.0"
+//    compileOnly fg.deobf("mezz.jei:jei-${mc_version}:${jei_version}:api")
+    compileOnly fg.deobf("com.jaquadro.minecraft.storagedrawers:StorageDrawers:${drawers_version}:api")
+    compileOnly "mekanism:Mekanism:${mekanism_version}:api"
+
+//    runtimeOnly fg.deobf("mezz.jei:jei-${mc_version}:${jei_version}")
+    runtimeOnly fg.deobf("mekanism:Mekanism:${mekanism_version}")// core
+    runtimeOnly fg.deobf("mekanism:Mekanism:${mekanism_version}:additions")// Mekanism: Additions
+    runtimeOnly fg.deobf("mekanism:Mekanism:${mekanism_version}:generators")// Mekanism: Generators
+    runtimeOnly fg.deobf("mekanism:Mekanism:${mekanism_version}:tools")// Mekanism: Tools
+    runtimeOnly fg.deobf("com.jaquadro.minecraft.storagedrawers:StorageDrawers:${drawers_version}")// storage Drawers
+    runtimeOnly "io.github.spair:imgui"// storage Drawers
+}
+
+compileKotlin {
+    kotlinOptions {
+        jvmTarget = '1.8'
+        languageVersion = '1.4'
+        apiVersion = '1.4'
+    }
+}
+
+
+task output(type: Copy) {
+    dependsOn "reobfJar"
+    from "build/reobfJar"
+    into 'builds'
+    rename { String fileName ->
+        fileName.replace("output", "bpm-${project.version}")
+    }
+}
+
+jar {
+    configurations.shade.each { dep ->
+        from(project.zipTree(dep)) {
+            exclude 'META-INF', 'META-INF/**'
+        }
+    }
+    manifest {
+        attributes([
+                "Specification-Title"     : "bpm",
+                "Specification-Vendor"    : "bpmsareus",
+                "Specification-Version"   : "1", // We are version 1 of ourselves
+                "Implementation-Title"    : project.name,
+                "Implementation-Version"  : "${version}",
+                "Implementation-Vendor"   : "bpmsareus",
+                "Implementation-Timestamp": new Date().format("yyyy-MM-dd'T'HH:mm:ssZ")
+        ])
+    }
+}
+
